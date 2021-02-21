@@ -1,10 +1,16 @@
 class Joint {
   PVector position;
   PVector stablePos; // the position that the joint wants stay
-  float mass;
   float amplitude;
-  float stableAmp;
+  float maxAmplitude;
   float k; // constrols how fast the joint will stabilize
+  
+  PVector electronPos;
+  int rotSign;
+  
+  color coldColor = color(68, 173, 71);
+  color hotColor = color(255, 122, 228);
+  color currentColor = coldColor;
   
   float t;
   float dt;
@@ -12,14 +18,19 @@ class Joint {
   Joint(PVector initialPos) {
     stablePos = initialPos.copy();
     position = initialPos.copy();
-    mass = 1;
     
+    maxAmplitude = 30;
     amplitude = 0;
     
     k = 0.01;
     
     t = random(0, 10);
-    dt = 0.1; // controls how fast the joint is moving
+    resetTempo();
+    
+    electronPos = PVector.random2D();
+    electronPos.mult(12);
+    rotSign = int(round(random(-1, 1)));
+    if (rotSign == 0) rotSign = 1;
   }
   
   void process() { 
@@ -31,11 +42,22 @@ class Joint {
     
     stabilize();
     
+    electronPos.rotate(rotSign * 0.3);
+    
     t += dt;
   }
   
-  void hammer(float newAmplitude) {
-    amplitude = newAmplitude;
+  void hammer() {
+    amplitude = maxAmplitude;
+    resetTempo();
+  }
+  
+  void absorbeEnergy(float dE) {
+    amplitude += dE;
+    resetTempo();
+  }
+  
+  void resetTempo() {
     dt = 0.1;
   }
   
@@ -47,9 +69,16 @@ class Joint {
   }
   
   void draw() {
+    float normalizedAmp = map(amplitude, 0, maxAmplitude, 0, 1);
+    color destinationColor = lerpColor(coldColor, hotColor, normalizedAmp);
+    currentColor = lerpColor(currentColor, destinationColor, 0.01);
+    
     push();
     noStroke();
-    ellipse(position.x, position.y, 10, 10);
+    fill(currentColor);
+    ellipse(position.x, position.y, 16, 16);
+    
+    ellipse(position.x + electronPos.x, position.y + electronPos.y, 4, 4);
     pop();  
   }
 }
